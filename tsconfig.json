@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "NodeNext",      // Changed from "commonjs" to "NodeNext"
+    "moduleResolution": "NodeNext", // Add this line
+    "outDir": "./dist",
+    "rootDir": "./",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["trimmed.ts"],
+  "exclude": ["node_modules"]
+}
