@@ -1,5 +1,5 @@
 {
-  "name": "@kazuph/mcp-screenshot",
+  "name": "@generalconsesus/allineone-mcp",
   "version": "1.0.4",
   "type": "module",
   "description": "A Model Context Protocol server that provides screenshot capabilities",
@@ -26,7 +26,7 @@
     "@types/node": "^20.10.5",
     "typescript": "^5.8.3"
   },
-  "author": "kazuph",
+  "author": "generalconsensus",
   "license": "MIT",
   "publishConfig": {
     "access": "public"
@@ -39,16 +39,16 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kazuph/mcp-screenshot.git"
+    "url": "git+https://github.com/generalconsensus/allinone-mcp.git"
   },
   "keywords": [
     "mcp",
     "screenshot"
   ],
   "bugs": {
-    "url": "https://github.com/kazuph/mcp-screenshot/issues"
+    "url": "https://github.com/generalconsensus/allinone-mcp/issues"
   },
-  "homepage": "https://github.com/kazuph/mcp-screenshot#readme",
+  "homepage": "https://github.com/generalconsensus/allinone-mcp#readme",
   "bin": {
     "mcp-screenshot": "./dist/index.js"
   }
