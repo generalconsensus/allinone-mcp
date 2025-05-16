@@ -22,7 +22,7 @@ async function ensureDateDirectory(): Promise<string> {
     return dateDir;
 }
 
-async function takeScreenshot(windowName?: string, shouldSwitchWindow: boolean = false): Promise<string> {
+async function takeScreenshot(windowName?: string, shouldSwitchWindow: boolean = false, switchToSubwindow: boolean = false, subwindowKey: string = ""): Promise<string> {
     const dateDir = await ensureDateDirectory();
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const windowSuffix = windowName ? `-${windowName.replace(/[^a-zA-Z0-9]/g, "_")}` : "";
@@ -31,14 +31,28 @@ async function takeScreenshot(windowName?: string, shouldSwitchWindow: boolean =
 
     try {
         if (windowName && shouldSwitchWindow) {
-            // Simple activate and fullscreen
-            const script = `
+            // Build the AppleScript dynamically based on parameters
+            let script = `
                 tell application "${windowName}"
                     activate
                 end tell
                 
                 delay 1
-                
+            `;
+
+            // Add subwindow switch if requested and a key is provided
+            if (switchToSubwindow && subwindowKey) {
+                script += `
+                    tell application "System Events"
+                        keystroke "${subwindowKey}" using {command down}
+                    end tell
+                    
+                    delay 2
+                `;
+            }
+
+            // Always toggle fullscreen
+            script += `
                 tell application "System Events"
                     keystroke "f" using {command down, control down}
                 end tell
@@ -47,7 +61,7 @@ async function takeScreenshot(windowName?: string, shouldSwitchWindow: boolean =
             `;
             
             await execFileAsync("osascript", ["-e", script]);
-            console.error(`Debug: Activated and made ${windowName} fullscreen`);
+            console.error(`Debug: Activated ${windowName}${switchToSubwindow && subwindowKey ? `, switched to subwindow with Cmd+${subwindowKey},` : ""} and made fullscreen`);
         }
 
         // Take the screenshot
@@ -55,7 +69,7 @@ async function takeScreenshot(windowName?: string, shouldSwitchWindow: boolean =
         console.error(`Debug: Screenshot taken`);
         
         if (windowName && shouldSwitchWindow) {
-            // Just exit fullscreen, no minimizing
+            // Exit fullscreen mode
             const postCaptureScript = `
                 tell application "System Events"
                     keystroke "f" using {command down, control down}
@@ -97,6 +111,8 @@ app.post("/invoke", async (req: express.Request, res: express.Response) => {
             const format = args?.format || "markdown";
             const windowName = args?.windowName;
             const switchToWindow = args?.switchToWindow || false;
+            const switchToSubwindow = args?.switchToSubwindow || false;
+            const subwindowKey = args?.subwindowKey || ""; // New parameter for the key
             const includeBase64 = args?.includeBase64 !== false; // Default to true
 
             if (region !== "full") {
@@ -104,10 +120,10 @@ app.post("/invoke", async (req: express.Request, res: express.Response) => {
             }
 
             console.error(
-                `Debug: Starting screenshot capture for region: ${region}, format: ${format}, window: ${windowName || 'current'}`,
+                `Debug: Starting screenshot capture for region: ${region}, format: ${format}, window: ${windowName || 'current'}, switchToSubwindow: ${switchToSubwindow}, subwindowKey: ${subwindowKey || 'none'}`,
             );
             
-            const imagePath = await takeScreenshot(windowName, switchToWindow);
+            const imagePath = await takeScreenshot(windowName, switchToWindow, switchToSubwindow, subwindowKey);
             console.error(`Debug: Screenshot saved to: ${imagePath}`);
             
             // Convert image to base64
@@ -153,6 +169,8 @@ app.post("/invoke", async (req: express.Request, res: express.Response) => {
                             "- format: 'markdown' (default)\n" +
                             "- windowName: Optional name of window to focus\n" +
                             "- switchToWindow: Whether to switch to the specified window (default: false)\n" +
+                            "- switchToSubwindow: Whether to switch to a subwindow (e.g., a specific view in the app) (default: false)\n" +
+                            "- subwindowKey: The key to press with Cmd to switch to the subwindow (e.g., '2' for Cmd+2 in Outlook to switch to calendar view) (default: none)\n" +
                             "- includeBase64: Whether to include base64 image data in response (default: true)\n" +
                             "The screenshot is saved to a dated directory in Downloads and returned as raw base64 data.",
                     },
@@ -194,5 +212,5 @@ app.listen(PORT, () => {
     }
     
     console.log(`\nTo test, use:`);
-    console.log(`curl -X POST http://localhost:${PORT}/invoke -H "Content-Type: application/json" -d '{"method": "callTool", "params": {"name": "capture", "arguments": {"region": "full", "windowName": "Calendar", "switchToWindow": true}}}'`);
+    console.log(`curl -X POST http://localhost:${PORT}/invoke -H "Content-Type: application/json" -d '{"method": "callTool", "params": {"name": "capture", "arguments": {"region": "full", "windowName": "Microsoft Outlook", "switchToWindow": true, "switchToSubwindow": true, "subwindowKey": "2"}}}'`);
 });

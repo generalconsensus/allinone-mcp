@@ -14,7 +14,7 @@ An MCP server that captures screenshots and performs OCR text recognition.
 
 This server uses two OCR engines:
 
-1. [yomitoku](https://github.com/kazuph/yomitoku)
+1. [yomitoku](https://github.com/dmcdermott/yomitoku)
    - Primary OCR engine
    - High-accuracy Japanese text recognition
    - Runs as an API server
@@ -27,7 +27,7 @@ This server uses two OCR engines:
 ## Installation
 
 ```bash
-npx -y @kazuph/mcp-screenshot
+npx -y @dmcdermott/mcp-screenshot
 ```
 
 ## Claude Desktop Configuration
@@ -39,7 +39,7 @@ Add the following configuration to your `claude_desktop_config.json`:
   "mcpServers": {
     "screenshot": {
       "command": "npx",
-      "args": ["-y", "@kazuph/mcp-screenshot"],
+      "args": ["-y", "@dmcdermott/mcp-screenshot"],
       "env": {
         "OCR_API_URL": "http://localhost:8000"  // yomitoku API base URL
       }
@@ -78,5 +78,5 @@ MIT
 
 ## Author
 
-kazuph
+dmcdermott
 # allinone-mcp
