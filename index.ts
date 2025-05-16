@@ -31,7 +31,6 @@ async function takeScreenshot(windowName?: string, shouldSwitchWindow: boolean =
 
     try {
         if (windowName && shouldSwitchWindow) {
-            // Build the AppleScript dynamically based on parameters
             let script = `
                 tell application "${windowName}"
                     activate
@@ -40,7 +39,6 @@ async function takeScreenshot(windowName?: string, shouldSwitchWindow: boolean =
                 delay 1
             `;
 
-            // Add subwindow switch if requested and a key is provided
             if (switchToSubwindow && subwindowKey) {
                 script += `
                     tell application "System Events"
@@ -51,7 +49,6 @@ async function takeScreenshot(windowName?: string, shouldSwitchWindow: boolean =
                 `;
             }
 
-            // Always toggle fullscreen
             script += `
                 tell application "System Events"
                     keystroke "f" using {command down, control down}
@@ -64,12 +61,10 @@ async function takeScreenshot(windowName?: string, shouldSwitchWindow: boolean =
             console.error(`Debug: Activated ${windowName}${switchToSubwindow && subwindowKey ? `, switched to subwindow with Cmd+${subwindowKey},` : ""} and made fullscreen`);
         }
 
-        // Take the screenshot
         await execFileAsync("screencapture", [filepath]);
         console.error(`Debug: Screenshot taken`);
         
         if (windowName && shouldSwitchWindow) {
-            // Exit fullscreen mode
             const postCaptureScript = `
                 tell application "System Events"
                     keystroke "f" using {command down, control down}
@@ -87,7 +82,6 @@ async function takeScreenshot(windowName?: string, shouldSwitchWindow: boolean =
     }
 }
 
-// Function to convert image file to raw base64 (without prefix)
 async function imageToBase64(filepath: string): Promise<string> {
     try {
         const imageBuffer = await readFile(filepath);
@@ -98,22 +92,26 @@ async function imageToBase64(filepath: string): Promise<string> {
     }
 }
 
-// HTTP Server Setup with Express
 const app = express();
 app.use(express.json());
 
 app.post("/invoke", async (req: express.Request, res: express.Response) => {
     try {
         const { method, params } = req.body;
-        if (method === "callTool" && params?.name === "capture") {
-            const { arguments: args } = params;
+
+        // Extract name and arguments, supporting both {params: {name, arguments}} and {params: {data: {name, arguments}}}
+        const toolData = params?.data || params; // Use params.data if it exists, otherwise use params directly
+        const toolName = toolData?.name;
+        const args = toolData?.arguments;
+
+        if (method === "callTool" && toolName === "capture") {
             const region = args?.region || "full";
             const format = args?.format || "markdown";
             const windowName = args?.windowName;
             const switchToWindow = args?.switchToWindow || false;
             const switchToSubwindow = args?.switchToSubwindow || false;
-            const subwindowKey = args?.subwindowKey || ""; // New parameter for the key
-            const includeBase64 = args?.includeBase64 !== false; // Default to true
+            const subwindowKey = args?.subwindowKey || "";
+            const includeBase64 = args?.includeBase64 !== false;
 
             if (region !== "full") {
                 return res.status(400).json({ error: "Only 'full' region is supported" });
@@ -126,14 +124,12 @@ app.post("/invoke", async (req: express.Request, res: express.Response) => {
             const imagePath = await takeScreenshot(windowName, switchToWindow, switchToSubwindow, subwindowKey);
             console.error(`Debug: Screenshot saved to: ${imagePath}`);
             
-            // Convert image to base64
             let base64Image = "";
             if (includeBase64) {
                 base64Image = await imageToBase64(imagePath);
                 console.error(`Debug: Image converted to base64`);
             }
             
-            // Determine the response format
             if (includeBase64) {
                 res.json({
                     content: [
@@ -143,7 +139,7 @@ app.post("/invoke", async (req: express.Request, res: express.Response) => {
                         },
                         {
                             type: "base64_image",
-                            data: base64Image  // Just the raw base64 data, no prefix
+                            data: base64Image
                         }
                     ],
                 });
@@ -186,7 +182,6 @@ app.post("/invoke", async (req: express.Request, res: express.Response) => {
     }
 });
 
-// Start HTTP server
 const PORT = 8000;
 app.listen(PORT, () => {
     console.log(`Screenshot MCP server running on port ${PORT}`);
@@ -194,14 +189,12 @@ app.listen(PORT, () => {
     console.log(`- http://localhost:${PORT}`);
     
     try {
-        // Get all network interfaces
         const nets = networkInterfaces();
         for (const name of Object.keys(nets)) {
             const interfaces = nets[name];
             if (!interfaces) continue;
             
             for (const net of interfaces) {
-                // Skip internal and non-IPv4 addresses
                 if (!net.internal && net.family === 'IPv4') {
                     console.log(`- http://${net.address}:${PORT}`);
                 }
